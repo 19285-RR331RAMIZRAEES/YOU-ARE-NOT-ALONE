@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL1 || process.env.POSTGRES_URL || process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+// Initialize database
+async function initDb() {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS stories (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        content TEXT NOT NULL,
+        author_name VARCHAR(50),
+        is_anonymous BOOLEAN DEFAULT TRUE,
+        is_approved BOOLEAN DEFAULT TRUE,
+        is_flagged BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } finally {
+    client.release();
+  }
+}
+
+// GET - Fetch all stories
+export async function GET() {
+  try {
+    await initDb();
+    const client = await pool.connect();
+    try {
+      const result = await client.query(`
+        SELECT id, content, author_name, is_anonymous, created_at 
+        FROM stories 
+        WHERE is_approved = TRUE 
+        ORDER BY created_at DESC
+      `);
+      
+      const stories = result.rows.map(story => ({
+        id: story.id,
+        content: story.content,
+        author: story.author_name && !story.is_anonymous ? story.author_name : 'Anonymous',
+        date: story.created_at.toISOString()
+      }));
+      
+      return NextResponse.json(stories);
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error fetching stories:', error);
+    return NextResponse.json({ error: 'Failed to fetch stories' }, { status: 500 });
+  }
+}
+
+// POST - Create new story
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { content, isAnonymous, authorName } = body;
+    
+    if (!content || content.trim().length < 10) {
+      return NextResponse.json(
+        { error: 'Story content must be at least 10 characters' },
+        { status: 400 }
+      );
+    }
+    
+    await initDb();
+    const client = await pool.connect();
+    try {
+      const author = !isAnonymous && authorName ? authorName.trim().substring(0, 50) : null;
+      
+      const result = await client.query(`
+        INSERT INTO stories (content, author_name, is_anonymous, is_approved, is_flagged)
+        VALUES ($1, $2, $3, TRUE, FALSE)
+        RETURNING id, content, author_name, is_anonymous, created_at
+      `, [content.trim(), author, isAnonymous]);
+      
+      const story = result.rows[0];
+      
+      return NextResponse.json({
+        id: story.id,
+        content: story.content,
+        author: author || 'Anonymous',
+        date: story.created_at.toISOString()
+      });
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error creating story:', error);
+    return NextResponse.json({ error: 'Failed to create story' }, { status: 500 });
+  }
+}
