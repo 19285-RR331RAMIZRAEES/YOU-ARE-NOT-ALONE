@@ -13,7 +13,7 @@ export default function Home() {
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight"
             style={{ color: '#2E2A28', lineHeight: '1.3', fontFamily: '"Playfair Display", "Georgia", serif' }}
           >
-            You don't have to go through this alone.
+            You don&apos;t have to go through this alone.
           </h1>
           <p 
             className="text-lg sm:text-xl md:text-2xl mb-10 max-w-2xl mx-auto"
@@ -77,11 +77,11 @@ export default function Home() {
             className="text-2xl sm:text-3xl font-bold mb-6 text-center"
             style={{ color: '#2E2A28', fontFamily: '"Playfair Display", "Georgia", serif' }}
           >
-            "Your story can save a life."
+            &quot;Your story can save a life.&quot;
           </h2>
           <div className="max-w-xl mx-auto space-y-4">
             <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
-              Every experience you've lived through — the pain, the struggle, the nights you didn't think you'd survive — holds the power to light someone else's way.
+              Every experience you&apos;ve lived through — the pain, the struggle, the nights you didn&apos;t think you&apos;d survive — holds the power to light someone else&apos;s way.
             </p>
             <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
               When you share what helped you keep going, you offer hope to someone who feels lost. Your courage becomes their strength.
@@ -196,7 +196,7 @@ export default function Home() {
             className="text-lg sm:text-xl mb-6 italic"
             style={{ color: '#5A524C' }}
           >
-            "If you're ready, your story is welcome here."
+            &quot;If you&apos;re ready, your story is welcome here.&quot;
           </p>
           <Link
             href="/share"

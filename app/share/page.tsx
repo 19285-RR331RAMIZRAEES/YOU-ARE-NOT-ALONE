@@ -107,7 +107,7 @@ export default function ShareStoryPage() {
           </li>
           <li className="flex items-start gap-3">
             <span style={{ color: '#8FB8A2' }}>•</span>
-            <span>How you're doing now - even small progress counts</span>
+            <span>How you&apos;re doing now - even small progress counts</span>
           </li>
           <li className="flex items-start gap-3">
             <span style={{ color: '#8FB8A2' }}>•</span>
