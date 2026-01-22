@@ -39,8 +39,20 @@ async function initDb() {
         is_anonymous BOOLEAN DEFAULT TRUE,
         is_approved BOOLEAN DEFAULT TRUE,
         is_flagged BOOLEAN DEFAULT FALSE,
+        deletion_token VARCHAR(64),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+    
+    // Add deletion_token column if it doesn't exist (for existing databases)
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                      WHERE table_name='stories' AND column_name='deletion_token') THEN
+          ALTER TABLE stories ADD COLUMN deletion_token VARCHAR(64);
+        END IF;
+      END $$;
     `);
   } catch (error) {
     console.error('Database initialization error:', error);
@@ -101,11 +113,14 @@ export async function POST(request: NextRequest) {
     try {
       const author = !isAnonymous && authorName ? authorName.trim().substring(0, 50) : null;
       
+      // Generate a unique deletion token for this story
+      const deletionToken = require('crypto').randomBytes(32).toString('hex');
+      
       const result = await client.query(`
-        INSERT INTO stories (content, author_name, is_anonymous, is_approved, is_flagged)
-        VALUES ($1, $2, $3, TRUE, FALSE)
-        RETURNING id, content, author_name, is_anonymous, created_at
-      `, [content.trim(), author, isAnonymous]);
+        INSERT INTO stories (content, author_name, is_anonymous, is_approved, is_flagged, deletion_token)
+        VALUES ($1, $2, $3, TRUE, FALSE, $4)
+        RETURNING id, content, author_name, is_anonymous, created_at, deletion_token
+      `, [content.trim(), author, isAnonymous, deletionToken]);
       
       const story = result.rows[0];
       
@@ -113,7 +128,8 @@ export async function POST(request: NextRequest) {
         id: story.id,
         content: story.content,
         author: author || 'Anonymous',
-        date: story.created_at.toISOString()
+        date: story.created_at.toISOString(),
+        deletionToken: story.deletion_token // Return token to client for storage
       });
     } finally {
       client.release();

@@ -15,6 +15,7 @@ export default function StoriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedStories, setExpandedStories] = useState<Set<string>>(new Set());
+  const [ownedStories, setOwnedStories] = useState<Set<string>>(new Set());
 
   const toggleStory = (storyId: string) => {
     setExpandedStories(prev => {
@@ -30,7 +31,17 @@ export default function StoriesPage() {
 
   useEffect(() => {
     fetchStories();
+    loadOwnedStories();
   }, []);
+
+  const loadOwnedStories = () => {
+    try {
+      const tokens = JSON.parse(localStorage.getItem('storyTokens') || '{}');
+      setOwnedStories(new Set(Object.keys(tokens)));
+    } catch (err) {
+      console.error('Error loading owned stories:', err);
+    }
+  };
 
   const fetchStories = async () => {
     try {
@@ -52,12 +63,36 @@ export default function StoriesPage() {
     }
 
     try {
-      await axios.delete(`/api/stories/${storyId}`);
+      // Get the deletion token from localStorage
+      const tokens = JSON.parse(localStorage.getItem('storyTokens') || '{}');
+      const deletionToken = tokens[storyId];
+      
+      if (!deletionToken) {
+        alert("You can only delete stories that you have shared.");
+        return;
+      }
+      
+      // Send delete request with token in header
+      await axios.delete(`/api/stories/${storyId}`, {
+        headers: {
+          'x-deletion-token': deletionToken
+        }
+      });
+      
+      // Remove token from localStorage
+      delete tokens[storyId];
+      localStorage.setItem('storyTokens', JSON.stringify(tokens));
+      setOwnedStories(new Set(Object.keys(tokens)));
+      
       // Refresh the stories list
       fetchStories();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting story:", err);
-      alert("Failed to delete story. Please try again.");
+      if (err.response?.status === 403 || err.response?.status === 401) {
+        alert("You can only delete stories that you have shared.");
+      } else {
+        alert("Failed to delete story. Please try again.");
+      }
     }
   };
 
@@ -185,17 +220,19 @@ export default function StoriesPage() {
                         year: 'numeric' 
                       })}
                     </span>
-                    <button
-                      onClick={() => handleDelete(story.id)}
-                      className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-                      style={{ 
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        color: '#DC2626'
-                      }}
-                      title="Delete this story"
-                    >
-                      Delete
-                    </button>
+                    {ownedStories.has(story.id) && (
+                      <button
+                        onClick={() => handleDelete(story.id)}
+                        className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                        style={{ 
+                          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                          color: '#DC2626'
+                        }}
+                        title="Delete this story"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>

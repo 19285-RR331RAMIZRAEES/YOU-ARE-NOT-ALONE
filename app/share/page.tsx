@@ -26,11 +26,21 @@ export default function ShareStoryPage() {
       setIsSubmitting(true);
       setError(null);
       
-      await axios.post("/api/stories", {
+      const response = await axios.post("/api/stories", {
         content: formData.story,
         isAnonymous: formData.isAnonymous,
         authorName: formData.authorName
       });
+      
+      // Store the deletion token in localStorage for this story
+      if (response.data.deletionToken && response.data.id) {
+        // Get existing tokens from localStorage
+        const existingTokens = JSON.parse(localStorage.getItem('storyTokens') || '{}');
+        // Add the new token
+        existingTokens[response.data.id] = response.data.deletionToken;
+        // Save back to localStorage
+        localStorage.setItem('storyTokens', JSON.stringify(existingTokens));
+      }
       
       // Reset form
       setFormData({

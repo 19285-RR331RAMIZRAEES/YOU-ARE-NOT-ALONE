@@ -34,8 +34,39 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
+    
+    // Get deletion token from request headers
+    const deletionToken = request.headers.get('x-deletion-token');
+    
+    if (!deletionToken) {
+      return NextResponse.json({ 
+        error: 'Unauthorized: Deletion token required' 
+      }, { status: 401 });
+    }
+    
     const client = await getConnection().connect();
     try {
+      // First, verify the token matches the story
+      const verifyResult = await client.query(
+        'SELECT deletion_token FROM stories WHERE id = $1',
+        [id]
+      );
+      
+      if (verifyResult.rows.length === 0) {
+        return NextResponse.json({ 
+          error: 'Story not found' 
+        }, { status: 404 });
+      }
+      
+      const storedToken = verifyResult.rows[0].deletion_token;
+      
+      if (storedToken !== deletionToken) {
+        return NextResponse.json({ 
+          error: 'Unauthorized: You can only delete your own stories' 
+        }, { status: 403 });
+      }
+      
+      // Token matches, proceed with deletion
       await client.query('DELETE FROM stories WHERE id = $1', [id]);
       return NextResponse.json({ message: 'Story deleted successfully', id });
     } finally {
