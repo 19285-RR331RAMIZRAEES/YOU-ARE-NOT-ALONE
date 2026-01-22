@@ -94,7 +94,10 @@ export async function POST(request: NextRequest) {
         { error: 'Story content must be at least 10 characters' },
         { status: 400 }
       );
-    }getConnection().connect();
+    }
+
+    await initDb();
+    const client = await getConnection().connect();
     try {
       const author = !isAnonymous && authorName ? authorName.trim().substring(0, 50) : null;
       
@@ -120,9 +123,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       error: 'Failed to create story',
       details: error.message 
-   
-  } catch (error) {
-    console.error('Error creating story:', error);
-    return NextResponse.json({ error: 'Failed to create story' }, { status: 500 });
+    }, { status: 500 });
   }
 }
