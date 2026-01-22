@@ -77,14 +77,32 @@ export default function Home() {
             className="text-2xl sm:text-3xl font-bold mb-6 text-center"
             style={{ color: '#2E2A28', fontFamily: '"Playfair Display", "Georgia", serif' }}
           >
-            &quot;Your story can save a life.&quot;
+            You Are Not Alone
           </h2>
           <div className="max-w-xl mx-auto space-y-4">
             <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
-              Every experience you&apos;ve lived through — the pain, the struggle, the nights you didn&apos;t think you&apos;d survive — holds the power to light someone else&apos;s way.
+              This is a quiet, supportive space for people who have experienced deep emotional pain including depression, suicidal thoughts, or moments when life felt overwhelming.
             </p>
             <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
-              When you share what helped you keep going, you offer hope to someone who feels lost. Your courage becomes their strength.
+              Here, you can read real stories shared by people who have been through similar struggles and found ways to keep going. Some share how they survived their darkest moments. Others share what helped them cope, heal, or simply make it through one more day.
+            </p>
+            <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
+              You are welcome to share your own story too anonymously or with your name, entirely by your choice. There is no pressure to speak, no expectation to be strong, and no judgment here.
+            </p>
+            <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
+              For some, putting their experience into words can feel like setting down a heavy weight they&apos;ve been carrying alone. Sharing may bring a sense of relief, clarity, or lightness but only if and when it feels right for you.
+            </p>
+            <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
+              Your story may also quietly reach someone who is struggling in silence. Many people who feel overwhelmed or have suicidal thoughts find it difficult to talk to anyone in their life. Here, they can read and share anonymously, without fear, and feel less alone in what they are going through.
+            </p>
+            <p style={{ color: '#5A524C', lineHeight: '1.7', fontWeight: '600' }}>
+              This platform exists for one simple reason: so no one has to face their pain by themselves.
+            </p>
+            <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
+              Sharing is always your choice. Reading quietly is just as welcome.
+            </p>
+            <p style={{ color: '#5A524C', lineHeight: '1.7' }}>
+              Whether you are here to read, to share when you feel ready, or to offer gentle encouragement to others you belong here.
             </p>
           </div>
         </section>
