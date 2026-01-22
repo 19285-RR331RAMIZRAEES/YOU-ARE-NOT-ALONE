@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import uuid
 
 app = FastAPI(title="Hope Stories API", version="2.0.0")
 
@@ -16,8 +19,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory storage (will reset on each deployment)
-stories_db = []
+def get_db_connection():
+    """Get database connection using Vercel Postgres env variables"""
+    return psycopg2.connect(
+        host=os.environ.get('POSTGRES_HOST'),
+        database=os.environ.get('POSTGRES_DATABASE'),
+        user=os.environ.get('POSTGRES_USER'),
+        password=os.environ.get('POSTGRES_PASSWORD'),
+        sslmode='require'
+    )
+
+def init_db():
+    """Initialize database tables"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS stories (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                content TEXT NOT NULL,
+                author_name VARCHAR(50),
+                is_anonymous BOOLEAN DEFAULT TRUE,
+                is_approved BOOLEAN DEFAULT TRUE,
+                is_flagged BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print(f"Database initialization error: {e}")
 
 class StoryCreate(BaseModel):
     content: str = Field(..., min_length=10, max_length=10000)
@@ -35,13 +69,41 @@ def read_root():
     return {
         "message": "Hope Stories API - You Are Not Alone",
         "version": "2.0.0",
-        "status": "running"
+        "status": "running",
+        "database": "PostgreSQL"
     }
 
 @app.get("/api/stories", response_model=List[StoryResponse])
 def get_stories():
-    """Get all stories"""
-    return stories_db
+    """Get all approved stories"""
+    try:
+        init_db()
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        cur.execute("""
+            SELECT id, content, author_name, is_anonymous, created_at 
+            FROM stories 
+            WHERE is_approved = TRUE 
+            ORDER BY created_at DESC
+        """)
+        
+        stories = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        return [
+            StoryResponse(
+                id=str(story['id']),
+                content=story['content'],
+                author=story['author_name'] if story['author_name'] and not story['is_anonymous'] else "Anonymous",
+                date=story['created_at'].isoformat()
+            )
+            for story in stories
+        ]
+    except Exception as e:
+        print(f"Error fetching stories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/stories", response_model=StoryResponse)
 def create_story(story_data: StoryCreate):
@@ -52,37 +114,76 @@ def create_story(story_data: StoryCreate):
             detail="Story content must be at least 10 characters"
         )
     
-    # Determine author info
-    author_name = None
-    if not story_data.isAnonymous and story_data.authorName:
-        author_name = story_data.authorName.strip()[:50]
-    
-    # Create new story
-    new_story = {
-        "id": str(len(stories_db) + 1),
-        "content": story_data.content.strip(),
-        "author": author_name if author_name else "Anonymous",
-        "date": datetime.now().isoformat()
-    }
-    
-    stories_db.append(new_story)
-    return new_story
+    try:
+        init_db()
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        author_name = None
+        if not story_data.isAnonymous and story_data.authorName:
+            author_name = story_data.authorName.strip()[:50]
+        
+        cur.execute("""
+            INSERT INTO stories (content, author_name, is_anonymous, is_approved, is_flagged)
+            VALUES (%s, %s, %s, TRUE, FALSE)
+            RETURNING id, content, author_name, is_anonymous, created_at
+        """, (story_data.content.strip(), author_name, story_data.isAnonymous))
+        
+        new_story = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return StoryResponse(
+            id=str(new_story['id']),
+            content=new_story['content'],
+            author=author_name if author_name else "Anonymous",
+            date=new_story['created_at'].isoformat()
+        )
+    except Exception as e:
+        print(f"Error creating story: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/stories/{story_id}")
 def delete_story(story_id: str):
     """Delete a story by ID"""
-    global stories_db
-    stories_db = [s for s in stories_db if s["id"] != story_id]
-    return {"message": "Story deleted successfully", "id": story_id}
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("DELETE FROM stories WHERE id = %s", (story_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        return {"message": "Story deleted successfully", "id": story_id}
+    except Exception as e:
+        print(f"Error deleting story: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/health")
 def health_check():
     """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "total_stories": len(stories_db),
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM stories")
+        count = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        
+        return {
+            "status": "healthy",
+            "database": "PostgreSQL",
+            "total_stories": count,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 # Vercel serverless handler
 handler = app
