@@ -1,14 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL1 || process.env.POSTGRES_URL || process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// Create pool with connection string
+const getPool = () => {
+  const connectionString = process.env.POSTGRES_URL1 || process.env.POSTGRES_URL || process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    throw new Error('No PostgreSQL connection string found');
+  }
+  
+  return new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  });
+};
+
+let pool: Pool;
+
+function getConnection() {
+  if (!pool) {
+    pool = getPool();
+  }
+  return pool;
+}
 
 // Initialize database
 async function initDb() {
-  const client = await pool.connect();
+  const client = await getConnection().connect();
   try {
     await client.query(`
       CREATE TABLE IF NOT EXISTS stories (
@@ -21,6 +42,9 @@ async function initDb() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+  } catch (error) {
+    console.error('Database initialization error:', error);
+    throw error;
   } finally {
     client.release();
   }
@@ -30,7 +54,7 @@ async function initDb() {
 export async function GET() {
   try {
     await initDb();
-    const client = await pool.connect();
+    const client = await getConnection().connect();
     try {
       const result = await client.query(`
         SELECT id, content, author_name, is_anonymous, created_at 
@@ -50,9 +74,12 @@ export async function GET() {
     } finally {
       client.release();
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching stories:', error);
-    return NextResponse.json({ error: 'Failed to fetch stories' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to fetch stories',
+      details: error.message 
+    }, { status: 500 });
   }
 }
 
@@ -67,10 +94,7 @@ export async function POST(request: NextRequest) {
         { error: 'Story content must be at least 10 characters' },
         { status: 400 }
       );
-    }
-    
-    await initDb();
-    const client = await pool.connect();
+    }getConnection().connect();
     try {
       const author = !isAnonymous && authorName ? authorName.trim().substring(0, 50) : null;
       
@@ -91,6 +115,12 @@ export async function POST(request: NextRequest) {
     } finally {
       client.release();
     }
+  } catch (error: any) {
+    console.error('Error creating story:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create story',
+      details: error.message 
+   
   } catch (error) {
     console.error('Error creating story:', error);
     return NextResponse.json({ error: 'Failed to create story' }, { status: 500 });
