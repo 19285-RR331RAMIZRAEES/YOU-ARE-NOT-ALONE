@@ -20,14 +20,11 @@ app.add_middleware(
 )
 
 def get_db_connection():
-    """Get database connection using Vercel Postgres env variables"""
-    return psycopg2.connect(
-        host=os.environ.get('POSTGRES_HOST'),
-        database=os.environ.get('POSTGRES_DATABASE'),
-        user=os.environ.get('POSTGRES_USER'),
-        password=os.environ.get('POSTGRES_PASSWORD'),
-        sslmode='require'
-    )
+    """Get database connection using Neon Postgres URL"""
+    postgres_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+    if not postgres_url:
+        raise Exception("POSTGRES_URL environment variable not set")
+    return psycopg2.connect(postgres_url)
 
 def init_db():
     """Initialize database tables"""
