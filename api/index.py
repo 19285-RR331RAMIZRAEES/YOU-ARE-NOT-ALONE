@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
-import uuid
+from mangum import Mangum
 
 app = FastAPI(title="Hope Stories API", version="2.0.0")
 
@@ -182,5 +182,5 @@ def health_check():
             "timestamp": datetime.now().isoformat()
         }
 
-# Vercel serverless handler
-handler = app
+# Vercel serverless handler using Mangum
+handler = Mangum(app)
