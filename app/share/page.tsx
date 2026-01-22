@@ -26,7 +26,7 @@ export default function ShareStoryPage() {
       setIsSubmitting(true);
       setError(null);
       
-      await axios.post("http://localhost:8000/api/stories", {
+      await axios.post("/api/stories", {
         content: formData.story,
         isAnonymous: formData.isAnonymous,
         authorName: formData.authorName

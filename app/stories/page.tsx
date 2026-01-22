@@ -36,11 +36,11 @@ export default function StoriesPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get<Story[]>("http://localhost:8000/api/stories");
+      const response = await axios.get<Story[]>("/api/stories");
       setStories(response.data);
     } catch (err) {
       console.error("Error fetching stories:", err);
-      setError("Failed to load stories. Make sure the backend server is running on port 8000.");
+      setError("Failed to load stories. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ export default function StoriesPage() {
     }
 
     try {
-      await axios.delete(`http://localhost:8000/api/stories/${storyId}`);
+      await axios.delete(`/api/stories/${storyId}`);
       // Refresh the stories list
       fetchStories();
     } catch (err) {
