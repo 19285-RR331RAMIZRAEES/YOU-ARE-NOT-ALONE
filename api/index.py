@@ -21,9 +21,9 @@ app.add_middleware(
 
 def get_db_connection():
     """Get database connection using Neon Postgres URL"""
-    postgres_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+    postgres_url = os.environ.get('POSTGRES_URL1') or os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
     if not postgres_url:
-        raise Exception("POSTGRES_URL environment variable not set")
+        raise Exception("POSTGRES_URL1/POSTGRES_URL environment variable not set")
     return psycopg2.connect(postgres_url)
 
 def init_db():
