@@ -169,6 +169,7 @@ export default function StoriesPage() {
                     {isExpanded ? 'Read Less' : 'Read More'}
                   </button>
                 )}
+
                 <div 
                   className="flex items-center justify-between text-sm mt-4 pt-4"
                   style={{ borderTop: '1px solid rgba(200, 221, 210, 0.4)' }}

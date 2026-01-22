@@ -308,3 +308,5 @@ If you or someone you know needs help:
 ---
 
 Built with care for those who need a safe space to share.
+#   Y O U - A R E - N O T - A L O N E  
+ 

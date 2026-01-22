@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from database import get_db, init_db, Story
 import uuid
 
-app = FastAPI(title="Hope Stories API", version="3.0.0")
+app = FastAPI(title="Hope Stories API", version="2.0.0")
 
 # Configure CORS
 app.add_middleware(
@@ -57,7 +57,7 @@ def get_stories(db: Session = Depends(get_db)):
         Story.is_approved == True
     ).order_by(Story.created_at.desc()).all()
     
-    # Transform to response format
+    # Transform to r2sponse format
     return [
         StoryResponse(
             id=str(story.id),
