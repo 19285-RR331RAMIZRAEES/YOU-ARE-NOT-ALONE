@@ -35,18 +35,39 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     
-    // Get deletion token from request headers
+    // Get deletion token and admin password from request headers
     const deletionToken = request.headers.get('x-deletion-token');
+    const adminPassword = request.headers.get('x-admin-password');
     
-    if (!deletionToken) {
+    // Check if admin password is provided and valid
+    const isAdmin = adminPassword && adminPassword === process.env.ADMIN_PASSWORD;
+    
+    if (!deletionToken && !isAdmin) {
       return NextResponse.json({ 
-        error: 'Unauthorized: Deletion token required' 
+        error: 'Unauthorized: Deletion token or admin password required' 
       }, { status: 401 });
     }
     
     const client = await getConnection().connect();
     try {
-      // First, verify the token matches the story
+      // If admin, skip token verification and delete directly
+      if (isAdmin) {
+        const checkResult = await client.query(
+          'SELECT id FROM stories WHERE id = $1',
+          [id]
+        );
+        
+        if (checkResult.rows.length === 0) {
+          return NextResponse.json({ 
+            error: 'Story not found' 
+          }, { status: 404 });
+        }
+        
+        await client.query('DELETE FROM stories WHERE id = $1', [id]);
+        return NextResponse.json({ message: 'Story deleted successfully (admin)', id });
+      }
+      
+      // Regular user deletion - verify token matches the story
       const verifyResult = await client.query(
         'SELECT deletion_token FROM stories WHERE id = $1',
         [id]

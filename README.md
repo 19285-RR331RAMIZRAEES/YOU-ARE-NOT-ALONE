@@ -108,6 +108,35 @@ Frontend will be available at http://localhost:3000
 - **Backend API**: http://localhost:8000
 - **API Documentation**: http://localhost:8000/docs
 - **Alternative API Docs**: http://localhost:8000/redoc
+- **Admin Panel**: http://localhost:3000/admin (password required)
+
+---
+
+## 🔐 Admin Panel
+
+The platform includes an admin panel for content moderation. For detailed setup instructions, see [ADMIN_SETUP.md](./ADMIN_SETUP.md).
+
+### Quick Admin Setup
+
+1. **Set admin password in `.env.local`:**
+   ```env
+   ADMIN_PASSWORD=your_secure_password_here
+   ```
+
+2. **Access the admin panel:**
+   - Navigate to `/admin` (or click the lock icon 🔒 in the navigation)
+   - Enter your admin password
+   - Manage and remove inappropriate stories
+
+3. **For production deployment:**
+   - Add `ADMIN_PASSWORD` to your hosting platform's environment variables
+   - Keep the password secure and confidential
+
+**Features:**
+- Password-protected access
+- View all stories
+- Delete inappropriate or harmful content
+- Subtle navigation link for discretion
 
 ---
 
@@ -128,11 +157,16 @@ For detailed deployment instructions to Vercel, Railway, or other platforms, see
 
 ```
 ├── app/                      # Next.js 14 app directory
+│   ├── admin/               # Admin panel for content moderation
+│   ├── api/                 # API routes
+│   │   ├── health/         # Health check endpoint
+│   │   └── stories/        # Stories CRUD endpoints
 │   ├── assets/              # Logo and images
 │   ├── share/               # Share story page
 │   ├── stories/             # Stories feed page
 │   ├── globals.css          # Global styles with Warm Dawn palette
 │   ├── layout.tsx           # Root layout with navigation
+│   ├── metadata.ts          # SEO metadata
 │   └── page.tsx             # Homepage
 ├── backend/                 # FastAPI backend
 │   ├── main_postgres.py     # Main API server (PostgreSQL)
@@ -143,6 +177,7 @@ For detailed deployment instructions to Vercel, Railway, or other platforms, see
 ├── public/                  # Static assets
 ├── docker-compose.yml       # PostgreSQL container setup
 ├── .gitignore              # Git ignore rules
+├── ADMIN_SETUP.md          # Admin panel setup guide
 ├── DEPLOYMENT.md           # Deployment guide
 ├── README.md               # This file
 ├── package.json            # Node.js dependencies
@@ -308,5 +343,6 @@ If you or someone you know needs help:
 ---
 
 Built with care for those who need a safe space to share.
-#   Y O U - A R E - N O T - A L O N E  
+#   Y O U - A R E - N O T - A L O N E 
+ 
  

@@ -136,6 +136,26 @@ function Navbar() {
           >
             Share
           </Link>
+          <Link
+            href="/admin"
+            className="px-4 py-2.5 rounded-full text-xs font-medium transition-all duration-200 opacity-30 hover:opacity-100"
+            style={{ 
+              color: '#7A6F68',
+              backgroundColor: 'transparent',
+              border: '1px solid rgba(143, 184, 162, 0.3)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(143, 184, 162, 0.6)';
+              e.currentTarget.style.color = '#5A524C';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'rgba(143, 184, 162, 0.3)';
+              e.currentTarget.style.color = '#7A6F68';
+            }}
+            title="Admin Panel"
+          >
+            🔒
+          </Link>
         </div>
       </div>
     </nav>
