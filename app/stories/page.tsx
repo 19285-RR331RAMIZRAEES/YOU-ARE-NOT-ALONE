@@ -10,12 +10,48 @@ interface Story {
   date: string;
 }
 
+interface Comment {
+  id: string;
+  content: string;
+  author: string;
+  date: string;
+}
+
+interface ReactionData {
+  counts: Record<string, number>;
+  userReactions: string[];
+}
+
+const REACTION_TYPES = [
+  { type: 'love', emoji: '❤️', label: 'Love' },
+  { type: 'support', emoji: '🤝', label: 'Support' },
+  { type: 'relate', emoji: '🫂', label: 'Relate' },
+  { type: 'strength', emoji: '💪', label: 'Strength' }
+];
+
 export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedStories, setExpandedStories] = useState<Set<string>>(new Set());
   const [ownedStories, setOwnedStories] = useState<Set<string>>(new Set());
+  const [commentsVisible, setCommentsVisible] = useState<Set<string>>(new Set());
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [newComment, setNewComment] = useState<Record<string, string>>({});
+  const [commentAnonymous, setCommentAnonymous] = useState<Record<string, boolean>>({});
+  const [commentName, setCommentName] = useState<Record<string, string>>({});
+  const [reactions, setReactions] = useState<Record<string, ReactionData>>({});
+  const [userToken, setUserToken] = useState<string>('');
+
+  useEffect(() => {
+    // Get or create user token for reactions
+    let token = localStorage.getItem('userToken');
+    if (!token) {
+      token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem('userToken', token);
+    }
+    setUserToken(token);
+  }, []);
 
   const toggleStory = (storyId: string) => {
     setExpandedStories(prev => {
@@ -27,6 +63,20 @@ export default function StoriesPage() {
       }
       return newSet;
     });
+  };
+
+  const toggleComments = async (storyId: string) => {
+    const newSet = new Set(commentsVisible);
+    if (newSet.has(storyId)) {
+      newSet.delete(storyId);
+    } else {
+      newSet.add(storyId);
+      // Load comments if not already loaded
+      if (!comments[storyId]) {
+        await fetchComments(storyId);
+      }
+    }
+    setCommentsVisible(newSet);
   };
 
   useEffect(() => {
@@ -49,11 +99,82 @@ export default function StoriesPage() {
       setError(null);
       const response = await axios.get<Story[]>("/api/stories");
       setStories(response.data);
+      
+      // Fetch reactions for all stories
+      response.data.forEach(story => {
+        fetchReactions(story.id);
+      });
     } catch (err) {
       console.error("Error fetching stories:", err);
       setError("Failed to load stories. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReactions = async (storyId: string) => {
+    try {
+      const response = await axios.get(`/api/stories/${storyId}/reactions`, {
+        headers: { 'x-user-token': userToken }
+      });
+      setReactions(prev => ({ ...prev, [storyId]: response.data }));
+    } catch (err) {
+      console.error("Error fetching reactions:", err);
+    }
+  };
+
+  const fetchComments = async (storyId: string) => {
+    try {
+      const response = await axios.get<Comment[]>(`/api/stories/${storyId}/comments`);
+      setComments(prev => ({ ...prev, [storyId]: response.data }));
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+    }
+  };
+
+  const handleReaction = async (storyId: string, reactionType: string) => {
+    try {
+      const response = await axios.post(`/api/stories/${storyId}/reactions`, 
+        { reactionType },
+        { headers: { 'x-user-token': userToken } }
+      );
+      
+      // Update user token if server provided a new one
+      if (response.data.userToken && response.data.userToken !== userToken) {
+        setUserToken(response.data.userToken);
+        localStorage.setItem('userToken', response.data.userToken);
+      }
+      
+      // Refresh reactions
+      await fetchReactions(storyId);
+    } catch (err) {
+      console.error("Error toggling reaction:", err);
+    }
+  };
+
+  const handleCommentSubmit = async (storyId: string) => {
+    const content = newComment[storyId]?.trim();
+    if (!content) return;
+
+    try {
+      const isAnonymous = commentAnonymous[storyId] !== false; // Default to anonymous
+      const authorName = !isAnonymous ? commentName[storyId] : null;
+
+      await axios.post(`/api/stories/${storyId}/comments`, {
+        content,
+        isAnonymous,
+        authorName
+      });
+
+      // Clear form
+      setNewComment(prev => ({ ...prev, [storyId]: '' }));
+      setCommentName(prev => ({ ...prev, [storyId]: '' }));
+      
+      // Refresh comments
+      await fetchComments(storyId);
+    } catch (err: any) {
+      console.error("Error posting comment:", err);
+      alert(err.response?.data?.error || "Failed to post comment");
     }
   };
 
@@ -169,6 +290,9 @@ export default function StoriesPage() {
             const displayContent = isExpanded || !shouldTruncate 
               ? story.content 
               : story.content.slice(0, 200) + '...';
+            const storyReactions = reactions[story.id] || { counts: {}, userReactions: [] };
+            const storyComments = comments[story.id] || [];
+            const showComments = commentsVisible.has(story.id);
 
             return (
               <article
@@ -187,6 +311,7 @@ export default function StoriesPage() {
                   e.currentTarget.style.boxShadow = '0 2px 12px rgba(0, 0, 0, 0.03)';
                 }}
               >
+                {/* Story Content */}
                 <p 
                   className="text-base md:text-lg leading-relaxed mb-4"
                   style={{ color: '#5A524C', lineHeight: '1.7' }}
@@ -205,6 +330,32 @@ export default function StoriesPage() {
                   </button>
                 )}
 
+                {/* Reactions */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {REACTION_TYPES.map(({ type, emoji, label }) => {
+                    const count = storyReactions.counts[type] || 0;
+                    const isActive = storyReactions.userReactions?.includes(type);
+                    
+                    return (
+                      <button
+                        key={type}
+                        onClick={() => handleReaction(story.id, type)}
+                        className="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5"
+                        style={{
+                          backgroundColor: isActive ? 'rgba(143, 184, 162, 0.2)' : 'rgba(143, 184, 162, 0.1)',
+                          border: isActive ? '1.5px solid #8FB8A2' : '1px solid rgba(143, 184, 162, 0.3)',
+                          color: isActive ? '#6B8F7B' : '#7A6F68'
+                        }}
+                        title={label}
+                      >
+                        <span>{emoji}</span>
+                        {count > 0 && <span>{count}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Author and Date Info */}
                 <div 
                   className="flex items-center justify-between text-sm mt-4 pt-4"
                   style={{ borderTop: '1px solid rgba(200, 221, 210, 0.4)' }}
@@ -235,6 +386,122 @@ export default function StoriesPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Comments Toggle */}
+                <div className="mt-4">
+                  <button
+                    onClick={() => toggleComments(story.id)}
+                    className="text-sm font-medium transition-colors flex items-center gap-2"
+                    style={{ color: '#8FB8A2' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#7AAE96'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = '#8FB8A2'}
+                  >
+                    <span>💬</span>
+                    <span>{showComments ? 'Hide' : 'Show'} Comments ({storyComments.length})</span>
+                  </button>
+                </div>
+
+                {/* Comments Section */}
+                {showComments && (
+                  <div className="mt-4 space-y-4">
+                    {/* Existing Comments */}
+                    {storyComments.length > 0 && (
+                      <div className="space-y-3">
+                        {storyComments.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="rounded-lg p-4"
+                            style={{
+                              backgroundColor: 'rgba(143, 184, 162, 0.05)',
+                              border: '1px solid rgba(143, 184, 162, 0.2)'
+                            }}
+                          >
+                            <p className="text-sm mb-2" style={{ color: '#5A524C' }}>
+                              {comment.content}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs" style={{ color: '#7A6F68' }}>
+                              <span>{comment.author}</span>
+                              <span>•</span>
+                              <span>
+                                {new Date(comment.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add Comment Form */}
+                    <div className="space-y-3">
+                      <textarea
+                        value={newComment[story.id] || ''}
+                        onChange={(e) => setNewComment(prev => ({ ...prev, [story.id]: e.target.value }))}
+                        placeholder="Share your thoughts of support..."
+                        className="w-full px-4 py-3 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 transition-all"
+                        style={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          border: '1px solid rgba(200, 221, 210, 0.5)',
+                          color: '#2E2A28',
+                          minHeight: '80px'
+                        }}
+                        maxLength={1000}
+                      />
+                      
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={commentAnonymous[story.id] !== false}
+                              onChange={(e) => setCommentAnonymous(prev => ({ ...prev, [story.id]: !e.target.checked }))}
+                              className="rounded"
+                              style={{ accentColor: '#8FB8A2' }}
+                            />
+                            <span style={{ color: '#7A6F68' }}>Post anonymously</span>
+                          </label>
+                          {commentAnonymous[story.id] === false && (
+                            <input
+                              type="text"
+                              value={commentName[story.id] || ''}
+                              onChange={(e) => setCommentName(prev => ({ ...prev, [story.id]: e.target.value }))}
+                              placeholder="Your name"
+                              className="px-3 py-1.5 rounded-lg text-sm focus:outline-none focus:ring-2"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                border: '1px solid rgba(200, 221, 210, 0.5)',
+                                color: '#2E2A28'
+                              }}
+                              maxLength={50}
+                            />
+                          )}
+                        </div>
+                        
+                        <button
+                          onClick={() => handleCommentSubmit(story.id)}
+                          disabled={!newComment[story.id]?.trim()}
+                          className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            backgroundColor: '#8FB8A2',
+                            color: '#FFFFFF'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!e.currentTarget.disabled) {
+                              e.currentTarget.style.backgroundColor = '#7AAE96';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#8FB8A2';
+                          }}
+                        >
+                          Post
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </article>
             );
           })}

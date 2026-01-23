@@ -54,6 +54,30 @@ async function initDb() {
         END IF;
       END $$;
     `);
+
+    // Create reactions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reactions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        story_id UUID REFERENCES stories(id) ON DELETE CASCADE,
+        reaction_type VARCHAR(20) NOT NULL,
+        user_token VARCHAR(64) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(story_id, user_token, reaction_type)
+      )
+    `);
+
+    // Create comments table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        story_id UUID REFERENCES stories(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        author_name VARCHAR(50),
+        is_anonymous BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
   } catch (error) {
     console.error('Database initialization error:', error);
     throw error;
