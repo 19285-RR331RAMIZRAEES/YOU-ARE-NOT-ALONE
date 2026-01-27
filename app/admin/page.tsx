@@ -154,9 +154,6 @@ export default function AdminPage() {
     }
   };
 
-  const 
-  };
-
   const handleDelete = async (storyId: string, storyPreview: string) => {
     const confirmText = storyPreview.length > 50 
       ? storyPreview.substring(0, 50) + "..." 
