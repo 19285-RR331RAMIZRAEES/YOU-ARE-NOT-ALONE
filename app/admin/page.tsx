@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
+// Admin panel for managing stories and comments
+
 interface Story {
   id: string;
   content: string;
