@@ -89,7 +89,10 @@ export default function AdminPage() {
       setError("Failed to load stories. Please try again.");
     } finally {
       setLoading(false);
-    }fetchCommentsForStory = async (storyId: string) => {
+    }
+  };
+
+  const fetchCommentsForStory = async (storyId: string) => {
     if (storyComments[storyId]) {
       // Already fetched, just toggle visibility
       setShowComments(prev => {
@@ -510,73 +513,6 @@ export default function AdminPage() {
                       </div>
                     )}
                   </div>
-                >
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span 
-                          className="text-xs font-mono px-2 py-1 rounded"
-                          style={{ 
-                            backgroundColor: 'rgba(143, 184, 162, 0.1)',
-                            color: '#7A6F68'
-                          }}
-                        >
-                          #{index + 1}
-                        </span>
-                        <span style={{ color: '#7A6F68' }} className="text-sm">
-                          {story.author}
-                        </span>
-                        <span style={{ color: '#7A6F68' }} className="text-sm">
-                          •
-                        </span>
-                        <span style={{ color: '#7A6F68' }} className="text-sm">
-                          {new Date(story.date).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric', 
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleDelete(story.id, story.content)}
-                      className="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
-                      style={{ 
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        color: '#DC2626'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                      }}
-                      title="Delete this story"
-                    >
-                      Delete
-                    </button>
-                  </div>
-
-                  <p 
-                    className="text-base leading-relaxed mb-2"
-                    style={{ color: '#5A524C', lineHeight: '1.7' }}
-                  >
-                    {displayContent}
-                  </p>
-                  
-                  {shouldTruncate && (
-                    <button
-                      onClick={() => toggleStory(story.id)}
-                      className="font-medium text-sm transition-colors"
-                      style={{ color: '#8FB8A2' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#7AAE96'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = '#8FB8A2'}
-                    >
-                      {isExpanded ? 'Read Less' : 'Read More'}
-                    </button>
-                  )}
                 </article>
               );
             })}
