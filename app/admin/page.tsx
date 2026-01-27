@@ -11,6 +11,13 @@ interface Story {
   date: string;
 }
 
+interface Comment {
+  id: string;
+  content: string;
+  author: string;
+  date: string;
+}
+
 export default function AdminPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +26,9 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [expandedStories, setExpandedStories] = useState<Set<string>>(new Set());
+  const [storyComments, setStoryComments] = useState<Record<string, Comment[]>>({});
+  const [loadingComments, setLoadingComments] = useState<Set<string>>(new Set());
+  const [showComments, setShowComments] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   const toggleStory = (storyId: string) => {
@@ -77,7 +87,74 @@ export default function AdminPage() {
       setError("Failed to load stories. Please try again.");
     } finally {
       setLoading(false);
+    }fetchCommentsForStory = async (storyId: string) => {
+    if (storyComments[storyId]) {
+      // Already fetched, just toggle visibility
+      setShowComments(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(storyId)) {
+          newSet.delete(storyId);
+        } else {
+          newSet.add(storyId);
+        }
+        return newSet;
+      });
+      return;
     }
+
+    setLoadingComments(prev => new Set(prev).add(storyId));
+    try {
+      const response = await axios.get<Comment[]>(`/api/stories/${storyId}/comments`);
+      setStoryComments(prev => ({ ...prev, [storyId]: response.data }));
+      setShowComments(prev => new Set(prev).add(storyId));
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+      alert("Failed to load comments");
+    } finally {
+      setLoadingComments(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(storyId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string, commentPreview: string) => {
+    const confirmText = commentPreview.length > 50 
+      ? commentPreview.substring(0, 50) + "..." 
+      : commentPreview;
+      
+    if (!window.confirm(`Are you sure you want to delete this comment?\n\n"${confirmText}"\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/comments/${commentId}`, {
+        headers: {
+          'x-admin-password': password
+        }
+      });
+      
+      // Refresh comments for all stories that have them loaded
+      const storiesWithComments = Object.keys(storyComments);
+      for (const storyId of storiesWithComments) {
+        const response = await axios.get<Comment[]>(`/api/stories/${storyId}/comments`);
+        setStoryComments(prev => ({ ...prev, [storyId]: response.data }));
+      }
+      
+      alert("Comment deleted successfully");
+    } catch (err: any) {
+      console.error("Error deleting comment:", err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        alert("Invalid admin password. Please log in again.");
+        handleLogout();
+      } else {
+        alert("Failed to delete comment. Please try again.");
+      }
+    }
+  };
+
+  const 
   };
 
   const handleDelete = async (storyId: string, storyPreview: string) => {
@@ -294,6 +371,79 @@ export default function AdminPage() {
                     border: '1px solid rgba(200, 221, 210, 0.4)',
                     boxShadow: '0 2px 12px rgba(0, 0, 0, 0.03)'
                   }}
+
+                  <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(200, 221, 210, 0.3)' }}>
+                    <button
+                      onClick={() => fetchCommentsForStory(story.id)}
+                      className="text-sm font-medium transition-colors flex items-center gap-2"
+                      style={{ color: '#8FB8A2' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#7AAE96'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#8FB8A2'}
+                      disabled={loadingComments.has(story.id)}
+                    >
+                      {loadingComments.has(story.id) ? (
+                        'Loading comments...'
+                      ) : showComments.has(story.id) ? (
+                        `Hide Comments${storyComments[story.id] ? ` (${storyComments[story.id].length})` : ''}`
+                      ) : (
+                        'Show Comments'
+                      )}
+                    </button>
+
+                    {showComments.has(story.id) && storyComments[story.id] && (
+                      <div className="mt-3 space-y-3">
+                        {storyComments[story.id].length === 0 ? (
+                          <p className="text-sm" style={{ color: '#7A6F68' }}>No comments yet</p>
+                        ) : (
+                          storyComments[story.id].map((comment) => (
+                            <div
+                              key={comment.id}
+                              className="rounded-lg p-4"
+                              style={{
+                                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                                border: '1px solid rgba(200, 221, 210, 0.3)'
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-3 mb-2">
+                                <div className="flex items-center gap-2 text-xs" style={{ color: '#7A6F68' }}>
+                                  <span>{comment.author}</span>
+                                  <span>•</span>
+                                  <span>
+                                    {new Date(comment.date).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric', 
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteComment(comment.id, comment.content)}
+                                  className="px-3 py-1 rounded-full text-xs font-medium transition-all duration-200"
+                                  style={{ 
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    color: '#DC2626'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                                  }}
+                                  title="Delete this comment"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                              <p className="text-sm" style={{ color: '#5A524C' }}>
+                                {comment.content}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
                 >
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1">
