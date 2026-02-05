@@ -1,53 +1,45 @@
+/**
+ * Health Check API Route
+ * Provides system health and database connectivity status
+ * 
+ * @module api/health
+ */
+
 import { NextResponse } from 'next/server';
-import { Pool } from 'pg';
+import { withConnection } from '@/lib/database';
+import { HTTP_STATUS } from '@/lib/constants';
+import { HealthCheckResponse } from '@/lib/types';
 
-// Create pool with connection string
-const getPool = () => {
-  const connectionString = process.env.POSTGRES_URL1 || process.env.POSTGRES_URL || process.env.DATABASE_URL;
-  
-  if (!connectionString) {
-    throw new Error('No PostgreSQL connection string found');
-  }
-  
-  return new Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-  });
-};
-
-let pool: Pool;
-
-function getConnection() {
-  if (!pool) {
-    pool = getPool();
-  }
-  return pool;
-}
-
-export async function GET() {
+/**
+ * GET /api/health
+ * Check system health and database connectivity
+ */
+export async function GET(): Promise<NextResponse> {
   try {
-    const client = await getConnection().connect();
-    try {
-      const result = await client.query('SELECT COUNT(*) FROM stories');
-      const count = parseInt(result.rows[0].count);
-      
-      return NextResponse.json({
-        status: 'healthy',
-        database: 'PostgreSQL',
-        total_stories: count,
-        timestamp: new Date().toISOString()
-      });
-    } finally {
-      client.release();
-    }
-  } catch (error: any) {
-    return NextResponse.json({
+    const result = await withConnection(async (client) => {
+      const queryResult = await client.query('SELECT COUNT(*) FROM stories');
+      return parseInt(queryResult.rows[0].count);
+    });
+    
+    const response: HealthCheckResponse = {
+      status: 'healthy',
+      database: 'PostgreSQL',
+      total_stories: result,
+      timestamp: new Date().toISOString(),
+    };
+    
+    return NextResponse.json(response);
+    
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    
+    const response: HealthCheckResponse = {
       status: 'unhealthy',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+      database: 'PostgreSQL',
+      error: message,
+      timestamp: new Date().toISOString(),
+    };
+    
+    return NextResponse.json(response, { status: HTTP_STATUS.INTERNAL_SERVER_ERROR });
   }
 }

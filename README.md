@@ -1,14 +1,12 @@
-# 🫂 You Are Not Alone - Mental Health Support Platform
+﻿# ðŸ«‚ You Are Not Alone - Mental Health Support Platform
 
-This project is a mental health support and suicide prevention platform designed to help people who are struggling with depression, suicidal thoughts, or emotional distress feel seen, heard, and less alone.
+A mental health support and suicide prevention platform designed to help people who are struggling with depression, suicidal thoughts, or emotional distress feel seen, heard, and less alone.
 
-The platform allows users to share their personal stories—either anonymously or with their real identity—about what they went through, how they survived, and what helped them cope. By reading real experiences from others who have faced similar pain, users may find hope, strength, and the courage to keep going.
-
-This project is built with a strong focus on emotional safety, privacy, and empathy-driven design.
+The platform allows users to share their personal storiesâ€”either anonymously or with their real identityâ€”about what they went through, how they survived, and what helped them cope. By reading real experiences from others who have faced similar pain, users may find hope, strength, and the courage to keep going.
 
 ---
 
-## 💡 Core Goals
+## ðŸ’¡ Core Goals
 
 - Save lives through connection and shared human experiences
 - Reduce stigma around mental health and suicidal thoughts
@@ -18,40 +16,74 @@ This project is built with a strong focus on emotional safety, privacy, and empa
 
 ---
 
-## ✨ Key Features
+## âœ¨ Key Features
 
-### 🔒 Privacy Control
+### ðŸ”’ Privacy Control
 - Share stories anonymously or with a real name
 - Full control over visibility and identity
 
-### 📝 Story Sharing
+### ðŸ“ Story Sharing
 - Survivors and individuals can share experiences as a form of healing
-- Focus on recovery, coping, and survival—not harm
+- Focus on recovery, coping, and survivalâ€”not harm
 
-### 💬 Supportive Community Interaction
+### ðŸ’¬ Supportive Community Interaction
 - Encouraging replies and compassionate comments
 - Non-judgmental, moderated discussions
 
-### 🎨 Soothing UI & Gentle UX
+### ðŸŽ¨ Soothing UI & Gentle UX
 - Calm colors, minimal design, and emotionally safe interactions
 - Designed to reduce anxiety and emotional overload
 - Warm Dawn color palette with sage green accents
 - Elegant Playfair Display typography for headings
 
-### 🛡️ Safety-First Design
+### ðŸ›¡ï¸ Safety-First Design
 - Content moderation to prevent triggering or harmful material
 - Crisis resources and helpline information clearly accessible
-- Emergency banner with suicide prevention helpline (988)
 
 ---
 
-## 🚀 Quick Start
+## ðŸ—ï¸ Architecture
+
+This is a **full-stack Next.js 15** application with:
+
+- **Frontend**: React 19 with TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes with PostgreSQL
+- **Database**: PostgreSQL with connection pooling
+
+### Project Structure
+
+```
+â”œâ”€â”€ app/                    # Next.js App Router
+â”‚   â”œâ”€â”€ api/               # API Routes
+â”‚   â”‚   â”œâ”€â”€ admin/         # Admin authentication
+â”‚   â”‚   â”œâ”€â”€ comments/      # Comment management
+â”‚   â”‚   â”œâ”€â”€ health/        # Health check endpoint
+â”‚   â”‚   â””â”€â”€ stories/       # Story CRUD operations
+â”‚   â”œâ”€â”€ admin/             # Admin panel page
+â”‚   â”œâ”€â”€ share/             # Story submission page
+â”‚   â”œâ”€â”€ stories/           # Stories listing page
+â”‚   â””â”€â”€ layout.tsx         # Root layout
+â”œâ”€â”€ lib/                   # Shared library code
+â”‚   â”œâ”€â”€ services/          # Business logic layer
+â”‚   â”‚   â”œâ”€â”€ stories.ts     # Story service
+â”‚   â”‚   â”œâ”€â”€ comments.ts    # Comment service
+â”‚   â”‚   â””â”€â”€ reactions.ts   # Reaction service
+â”‚   â”œâ”€â”€ config.ts          # Environment configuration
+â”‚   â”œâ”€â”€ constants.ts       # Application constants
+â”‚   â”œâ”€â”€ database.ts        # Database connection pool
+â”‚   â””â”€â”€ types.ts           # TypeScript type definitions
+â”œâ”€â”€ public/                # Static assets
+â””â”€â”€ .env.example           # Environment template
+```
+
+---
+
+## ðŸš€ Quick Start
 
 ### Prerequisites
 
 - **Node.js** 20+ and npm
-- **Python** 3.8+
-- **PostgreSQL** (via Docker or local installation)
+- **PostgreSQL** database (local, Docker, or cloud service like Vercel Postgres)
 
 ### Local Development Setup
 
@@ -61,62 +93,43 @@ This project is built with a strong focus on emotional safety, privacy, and empa
    cd your-repo-name
    ```
 
-2. **Install frontend dependencies:**
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Install backend dependencies:**
+3. **Configure environment variables:**
    ```bash
-   cd backend
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install -r requirements.txt
-   cd ..
+   cp .env.example .env.local
+   ```
+   
+   Update `.env.local` with your settings:
+   ```env
+   POSTGRES_URL=postgresql://username:password@host:5432/database
+   ADMIN_PASSWORD=your_secure_admin_password
    ```
 
-4. **Set up PostgreSQL database:**
+4. **Run the development server:**
    ```bash
-   docker-compose up -d
+   npm run dev
    ```
+   
+   The application will be available at http://localhost:3000
 
-5. **Configure environment variables:**
-   - Create `.env` file in the root directory
-   - Copy contents from `.env.example`
-   - Update with your local settings
+### Running in Production
 
-### Running the Application
-
-You need to run **both** the backend and frontend servers:
-
-**Terminal 1 - Backend (FastAPI):**
 ```bash
-cd backend
-python main_postgres.py
+npm run build
+npm start
 ```
-Backend will be available at http://localhost:8000
-
-**Terminal 2 - Frontend (Next.js):**
-```bash
-npm run dev
-```
-Frontend will be available at http://localhost:3000
-
-### Accessing the Application
-
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Alternative API Docs**: http://localhost:8000/redoc
-- **Admin Panel**: http://localhost:3000/admin (password required)
 
 ---
 
-## 🔐 Admin Panel
+## ðŸ” Admin Panel
 
-The platform includes an admin panel for content moderation. For detailed setup instructions, see [ADMIN_SETUP.md](./ADMIN_SETUP.md).
+The platform includes an admin panel for content moderation.
 
-### Quick Admin Setup
+### Admin Setup
 
 1. **Set admin password in `.env.local`:**
    ```env
@@ -124,7 +137,7 @@ The platform includes an admin panel for content moderation. For detailed setup 
    ```
 
 2. **Access the admin panel:**
-   - Navigate to `/admin` (or click the lock icon 🔒 in the navigation)
+   - Navigate to `/admin` (or click the lock icon ðŸ”’ in the navigation)
    - Enter your admin password
    - Manage and remove inappropriate stories
 
@@ -140,66 +153,74 @@ The platform includes an admin panel for content moderation. For detailed setup 
 
 ---
 
-## 🚀 Production Deployment
-
-For detailed deployment instructions to Vercel, Railway, or other platforms, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+## ðŸš€ Production Deployment
 
 ### Quick Deploy to Vercel
 
 1. Push your code to GitHub
 2. Connect your repository to Vercel
-3. Set `NEXT_PUBLIC_API_URL` environment variable
+3. Set environment variables:
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `ADMIN_PASSWORD` - Admin panel password
 4. Deploy!
 
 ---
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
-├── app/                      # Next.js 14 app directory
-│   ├── admin/               # Admin panel for content moderation
-│   ├── api/                 # API routes
-│   │   ├── health/         # Health check endpoint
-│   │   └── stories/        # Stories CRUD endpoints
-│   ├── assets/              # Logo and images
-│   ├── share/               # Share story page
-│   ├── stories/             # Stories feed page
-│   ├── globals.css          # Global styles with Warm Dawn palette
-│   ├── layout.tsx           # Root layout with navigation
-│   ├── metadata.ts          # SEO metadata
-│   └── page.tsx             # Homepage
-├── backend/                 # FastAPI backend
-│   ├── main_postgres.py     # Main API server (PostgreSQL)
-│   ├── database.py          # Database configuration
-│   ├── init.sql             # Database schema
-│   ├── requirements.txt     # Python dependencies
-│   └── .env.example         # Environment variables template
-├── public/                  # Static assets
-├── docker-compose.yml       # PostgreSQL container setup
-├── .gitignore              # Git ignore rules
-├── ADMIN_SETUP.md          # Admin panel setup guide
-├── DEPLOYMENT.md           # Deployment guide
-├── README.md               # This file
-├── package.json            # Node.js dependencies
-├── tailwind.config.ts      # Tailwind CSS configuration
-└── tsconfig.json           # TypeScript configuration
+â”œâ”€â”€ app/                      # Next.js 15 app directory
+â”‚   â”œâ”€â”€ admin/               # Admin panel for content moderation
+â”‚   â”œâ”€â”€ api/                 # API routes (Next.js API)
+â”‚   â”‚   â”œâ”€â”€ admin/          # Admin verification endpoint
+â”‚   â”‚   â”œâ”€â”€ comments/       # Comments CRUD endpoints
+â”‚   â”‚   â”œâ”€â”€ health/         # Health check endpoint
+â”‚   â”‚   â””â”€â”€ stories/        # Stories CRUD + reactions endpoints
+â”‚   â”œâ”€â”€ assets/              # Logo and images
+â”‚   â”œâ”€â”€ share/               # Share story page
+â”‚   â”œâ”€â”€ stories/             # Stories feed page
+â”‚   â”œâ”€â”€ globals.css          # Global styles with Warm Dawn palette
+â”‚   â”œâ”€â”€ layout.tsx           # Root layout with navigation
+â”‚   â”œâ”€â”€ metadata.ts          # SEO metadata
+â”‚   â””â”€â”€ page.tsx             # Homepage
+â”œâ”€â”€ lib/                      # Shared library code
+â”‚   â”œâ”€â”€ config.ts            # Environment configuration
+â”‚   â”œâ”€â”€ constants.ts         # Application constants
+â”‚   â”œâ”€â”€ database.ts          # Database connection pool
+â”‚   â”œâ”€â”€ types.ts             # TypeScript interfaces
+â”‚   â””â”€â”€ services/            # Business logic layer
+â”‚       â”œâ”€â”€ stories.ts       # Story operations
+â”‚       â”œâ”€â”€ comments.ts      # Comment operations
+â”‚       â””â”€â”€ reactions.ts     # Reaction operations
+â”œâ”€â”€ public/                  # Static assets
+â”œâ”€â”€ .env.example             # Environment variables template
+â”œâ”€â”€ .gitignore              # Git ignore rules
+â”œâ”€â”€ README.md               # This file
+â”œâ”€â”€ package.json            # Node.js dependencies
+â”œâ”€â”€ tailwind.config.ts      # Tailwind CSS configuration
+â””â”€â”€ tsconfig.json           # TypeScript configuration
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## ðŸ› ï¸ Tech Stack
 
 ### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
+- **Next.js 15** - React framework with App Router
+- **React 19** - Latest React with improved performance
+- **TypeScript** - Type-safe JavaScript with strict mode
 - **Tailwind CSS** - Utility-first CSS framework
 - **Axios** - HTTP client for API requests
 
-### Backend
-- **FastAPI** - Modern Python web framework
-- **SQLAlchemy** - SQL toolkit and ORM
+### Backend (Integrated)
+- **Next.js API Routes** - Full-stack API within Next.js
 - **PostgreSQL** - Production database
-- **Pydantic** - Data validation
+- **pg** - PostgreSQL driver for Node.js
+
+### Architecture
+- **Service Layer Pattern** - Clean separation of concerns
+- **SOLID Principles** - Maintainable, scalable code
+- **Centralized Configuration** - Single source of truth for env vars
 
 ### Design
 - **Warm Dawn Color Palette** - Calming cream to beige gradient
@@ -209,7 +230,7 @@ For detailed deployment instructions to Vercel, Railway, or other platforms, see
 
 ---
 
-## 🔧 Development
+## ðŸ”§ Development
 
 ### Available Scripts
 
@@ -218,14 +239,9 @@ For detailed deployment instructions to Vercel, Railway, or other platforms, see
 - `npm start` - Start production server
 - `npm run lint` - Run ESLint
 
-### Backend Scripts
-
-- `python main_postgres.py` - Start FastAPI server
-- View API docs at `/docs` for interactive testing
-
 ---
 
-## 🤝 Contributing
+## ðŸ¤ Contributing
 
 This is a sensitive mental health platform. Contributions should prioritize:
 - User safety and emotional wellbeing
@@ -235,13 +251,13 @@ This is a sensitive mental health platform. Contributions should prioritize:
 
 ---
 
-## 📄 License
+## ðŸ“„ License
 
 This project is dedicated to saving lives and supporting mental health. Use responsibly.
 
 ---
 
-## 🆘 Crisis Resources
+## ðŸ†˜ Crisis Resources
 
 If you or someone you know is in crisis:
 - **US**: National Suicide Prevention Lifeline: **988**
@@ -250,99 +266,9 @@ If you or someone you know is in crisis:
 
 ---
 
-## 💙 Acknowledgments
+## ðŸ’™ Acknowledgments
 
-This platform exists to remind everyone struggling that **you are not alone**. Your story matters. Your life matters.
-
-## Project Structure
-
-```
-├── app/
-│   ├── layout.tsx          # Root layout with Navbar, Footer, Emergency Banner
-│   ├── page.tsx            # Home page
-│   ├── globals.css         # Global styles and Tailwind directives
-│   ├── stories/
-│   │   └── page.tsx        # Story feed page
-│   └── share/
-│       └── page.tsx        # Share story page (form)
-├── public/                 # Static assets
-├── tailwind.config.ts      # Tailwind configuration with custom colors
-├── tsconfig.json           # TypeScript configuration
-├── next.config.ts          # Next.js configuration
-└── package.json            # Project dependencies and scripts
-```
-
-## Custom Colors
-
-The project uses a custom color palette defined in Tailwind config:
-
-- **Pastel Blue**: Calming blues (50-500 shades)
-- **Beige**: Warm beiges (50-500 shades)
-
-## Pages
-
-### Home (`/`)
-Welcome page with:
-- Gentle welcome message
-- Two action buttons: "Read Stories" and "Share Your Story"
-- Inspirational quote
-
-### Stories (`/stories`)
-- Displays sample stories (ready for backend integration)
-- Story cards with title, excerpt, date, and author
-- Call-to-action to share your own story
-
-### Share (`/share`)
-- Form to submit a new story
-- Anonymous posting option
-- Community guidelines
-- Currently shows alert (no backend yet)
-
-## Layout Components
-
-### Emergency Banner
-- Static banner at the top of every page
-- Displays crisis helpline number (988)
-- Soft blue background for visibility without alarming
-
-### Navbar
-- Site branding
-- Navigation links to all pages
-- Responsive mobile menu ready
-
-### Footer
-- Copyright information
-- Supportive messaging
-
-## Future Enhancements
-
-- [ ] Backend API integration
-- [ ] Database for storing stories
-- [ ] User authentication
-- [ ] Story moderation system
-- [ ] Comments and reactions
-- [ ] Search and filter functionality
-- [ ] Story categories/tags
-
-## Notes
-
-- No backend integration yet - form submissions show alerts
-- Sample data is hardcoded in the Stories page
-- Design emphasizes accessibility and emotional safety
-
-## License
-
-This project was created as a demonstration. Modify as needed for your use case.
-
-## Support Resources
-
-If you or someone you know needs help:
-- **National Crisis Helpline**: 988
-- **Crisis Text Line**: Text HOME to 741741
 
 ---
 
 Built with care for those who need a safe space to share.
-#   Y O U - A R E - N O T - A L O N E 
- 
- 

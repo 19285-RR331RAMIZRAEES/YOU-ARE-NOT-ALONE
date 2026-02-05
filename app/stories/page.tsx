@@ -2,32 +2,8 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-
-interface Story {
-  id: string;
-  content: string;
-  author: string;
-  date: string;
-}
-
-interface Comment {
-  id: string;
-  content: string;
-  author: string;
-  date: string;
-}
-
-interface ReactionData {
-  counts: Record<string, number>;
-  userReactions: string[];
-}
-
-const REACTION_TYPES = [
-  { type: 'love', emoji: '❤️', label: 'Love' },
-  { type: 'support', emoji: '🤝', label: 'Support' },
-  { type: 'relate', emoji: '🫂', label: 'Relate' },
-  { type: 'strength', emoji: '💪', label: 'Strength' }
-];
+import { Story, Comment, ReactionData } from "@/lib/types";
+import { REACTION_TYPES, STORAGE_KEYS } from "@/lib/constants";
 
 export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
@@ -45,10 +21,10 @@ export default function StoriesPage() {
 
   useEffect(() => {
     // Get or create user token for reactions
-    let token = localStorage.getItem('userToken');
+    let token = localStorage.getItem(STORAGE_KEYS.USER_TOKEN);
     if (!token) {
       token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      localStorage.setItem('userToken', token);
+      localStorage.setItem(STORAGE_KEYS.USER_TOKEN, token);
     }
     setUserToken(token);
   }, []);
@@ -86,7 +62,7 @@ export default function StoriesPage() {
 
   const loadOwnedStories = () => {
     try {
-      const tokens = JSON.parse(localStorage.getItem('storyTokens') || '{}');
+      const tokens = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORY_TOKENS) || '{}');
       setOwnedStories(new Set(Object.keys(tokens)));
     } catch (err) {
       console.error('Error loading owned stories:', err);
@@ -142,7 +118,7 @@ export default function StoriesPage() {
       // Update user token if server provided a new one
       if (response.data.userToken && response.data.userToken !== userToken) {
         setUserToken(response.data.userToken);
-        localStorage.setItem('userToken', response.data.userToken);
+        localStorage.setItem(STORAGE_KEYS.USER_TOKEN, response.data.userToken);
       }
       
       // Refresh reactions
@@ -172,9 +148,10 @@ export default function StoriesPage() {
       
       // Refresh comments
       await fetchComments(storyId);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error posting comment:", err);
-      alert(err.response?.data?.error || "Failed to post comment");
+      const axiosError = err as { response?: { data?: { error?: string } } };
+      alert(axiosError.response?.data?.error || "Failed to post comment");
     }
   };
 
@@ -185,7 +162,7 @@ export default function StoriesPage() {
 
     try {
       // Get the deletion token from localStorage
-      const tokens = JSON.parse(localStorage.getItem('storyTokens') || '{}');
+      const tokens = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORY_TOKENS) || '{}');
       const deletionToken = tokens[storyId];
       
       if (!deletionToken) {
@@ -202,14 +179,15 @@ export default function StoriesPage() {
       
       // Remove token from localStorage
       delete tokens[storyId];
-      localStorage.setItem('storyTokens', JSON.stringify(tokens));
+      localStorage.setItem(STORAGE_KEYS.STORY_TOKENS, JSON.stringify(tokens));
       setOwnedStories(new Set(Object.keys(tokens)));
       
       // Refresh the stories list
       fetchStories();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting story:", err);
-      if (err.response?.status === 403 || err.response?.status === 401) {
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 403 || axiosError.response?.status === 401) {
         alert("You can only delete stories that you have shared.");
       } else {
         alert("Failed to delete story. Please try again.");

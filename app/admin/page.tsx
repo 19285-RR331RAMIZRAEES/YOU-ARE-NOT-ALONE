@@ -3,23 +3,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { Story, Comment } from "@/lib/types";
+import { SESSION_KEYS } from "@/lib/constants";
 
-// Admin panel for managing stories and comments
-
-interface Story {
-  id: string;
-  content: string;
-  author: string;
-  date: string;
-}
-
-interface Comment {
-  id: string;
-  content: string;
-  author: string;
-  date: string;
-}
-
+/**
+ * Admin panel for managing stories and comments
+ */
 export default function AdminPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,32 +36,60 @@ export default function AdminPage() {
 
   useEffect(() => {
     // Check if already authenticated in session
-    const savedPassword = sessionStorage.getItem('adminPassword');
+    const savedPassword = sessionStorage.getItem(SESSION_KEYS.ADMIN_PASSWORD);
     if (savedPassword) {
-      setPassword(savedPassword);
-      setIsAuthenticated(true);
-      fetchStories();
+      // Verify the saved password is still valid
+      axios.post('/api/admin/verify', { password: savedPassword })
+        .then(response => {
+          if (response.data.success) {
+            setPassword(savedPassword);
+            setIsAuthenticated(true);
+            fetchStories();
+          } else {
+            sessionStorage.removeItem(SESSION_KEYS.ADMIN_PASSWORD);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          sessionStorage.removeItem(SESSION_KEYS.ADMIN_PASSWORD);
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
       setLoginError("Please enter the admin password");
       return;
     }
     
-    // Save to session storage
-    sessionStorage.setItem('adminPassword', password);
-    setIsAuthenticated(true);
-    setLoginError("");
-    fetchStories();
+    try {
+      // Verify password with backend
+      const response = await axios.post('/api/admin/verify', { password });
+      
+      if (response.data.success) {
+        // Save to session storage
+        sessionStorage.setItem(SESSION_KEYS.ADMIN_PASSWORD, password);
+        setIsAuthenticated(true);
+        setLoginError("");
+        fetchStories();
+      }
+    } catch (err: unknown) {
+      console.error("Login error:", err);
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 401) {
+        setLoginError("Invalid password. Please try again.");
+      } else {
+        setLoginError("An error occurred. Please try again.");
+      }
+    }
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('adminPassword');
+    sessionStorage.removeItem(SESSION_KEYS.ADMIN_PASSWORD);
     setPassword("");
     setIsAuthenticated(false);
     setStories([]);
@@ -148,9 +165,10 @@ export default function AdminPage() {
       }
       
       alert("Comment deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting comment:", err);
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
         alert("Invalid admin password. Please log in again.");
         handleLogout();
       } else {
@@ -178,9 +196,10 @@ export default function AdminPage() {
       // Refresh the stories list
       fetchStories();
       alert("Story deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error deleting story:", err);
-      if (err.response?.status === 401 || err.response?.status === 403) {
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
         alert("Invalid admin password. Please log in again.");
         handleLogout();
       } else {

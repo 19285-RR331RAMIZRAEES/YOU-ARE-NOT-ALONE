@@ -3,6 +3,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { STORAGE_KEYS, CONTENT_LIMITS } from "@/lib/constants";
 
 export default function ShareStoryPage() {
   const router = useRouter();
@@ -17,8 +18,8 @@ export default function ShareStoryPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (formData.story.trim().length < 10) {
-      setError("Story must be at least 10 characters long.");
+    if (formData.story.trim().length < CONTENT_LIMITS.STORY_MIN_LENGTH) {
+      setError(`Story must be at least ${CONTENT_LIMITS.STORY_MIN_LENGTH} characters long.`);
       return;
     }
 
@@ -35,11 +36,11 @@ export default function ShareStoryPage() {
       // Store the deletion token in localStorage for this story
       if (response.data.deletionToken && response.data.id) {
         // Get existing tokens from localStorage
-        const existingTokens = JSON.parse(localStorage.getItem('storyTokens') || '{}');
+        const existingTokens = JSON.parse(localStorage.getItem(STORAGE_KEYS.STORY_TOKENS) || '{}');
         // Add the new token
         existingTokens[response.data.id] = response.data.deletionToken;
         // Save back to localStorage
-        localStorage.setItem('storyTokens', JSON.stringify(existingTokens));
+        localStorage.setItem(STORAGE_KEYS.STORY_TOKENS, JSON.stringify(existingTokens));
       }
       
       // Reset form
@@ -54,7 +55,7 @@ export default function ShareStoryPage() {
       router.push("/stories");
     } catch (err) {
       console.error("Error submitting story:", err);
-      setError("Failed to submit your story. Make sure the backend server is running on port 8000.");
+      setError("Failed to submit your story. Please try again later.");
     } finally {
       setIsSubmitting(false);
     }
